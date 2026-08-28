@@ -6,7 +6,9 @@ CREATE TABLE job_copilot.vector.job_postings_src (
     title STRING,
     company STRING,
     description STRING,
-    combined_text STRING   -- title + qualifications + description spojeno, za embedding
+    combined_text STRING,   -- title + qualifications + description spojeno, za embedding
+    CONSTRAINT uq_user UNIQUE (job_id)
+
 ) TBLPROPERTIES (delta.enableChangeDataFeed = true);
 
 ALTER TABLE job_copilot.vector.job_postings_src
