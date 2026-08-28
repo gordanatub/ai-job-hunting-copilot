@@ -26,15 +26,19 @@ CREATE TABLE profiles (
     remote_only   BOOLEAN DEFAULT false,
     preferred_locations TEXT[],
     resume_text   TEXT,
-    updated_at    TIMESTAMP DEFAULT now()
+    updated_at    TIMESTAMP DEFAULT now(),
+    CONSTRAINT uq_profiles_user UNIQUE (user_id)
+
 );
 
-CREATE TABLE skills (
-    skill_id      SERIAL PRIMARY KEY,
-    user_id       INTEGER REFERENCES users(user_id),
-    skill_name    TEXT NOT NULL,
-    proficiency   TEXT CHECK (proficiency IN ('beginner','intermediate','advanced','expert')),
-    years_exp     NUMERIC
+CREATE TABLE IF NOT EXISTS skills (
+    skill_id    SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(user_id),
+    skill_name  TEXT NOT NULL,
+    proficiency TEXT CHECK (
+        proficiency IN ('beginner','intermediate','advanced','expert')
+    ),
+    years_exp   NUMERIC
 );
 
 CREATE TABLE job_postings (
@@ -59,7 +63,9 @@ CREATE TABLE applications (
     stage          TEXT CHECK (stage IN ('saved','applied','interviewing','rejected','offer')) DEFAULT 'saved',
     cover_letter_snippet TEXT,
     applied_at     TIMESTAMP,
-    updated_at     TIMESTAMP DEFAULT now()
+    updated_at     TIMESTAMP DEFAULT now(),
+    CONSTRAINT uq_application_user_job UNIQUE (user_id, job_id)
+
 );
 
 CREATE TABLE saved_jobs (
@@ -67,7 +73,9 @@ CREATE TABLE saved_jobs (
     user_id      INTEGER REFERENCES users(user_id),
     job_id       TEXT REFERENCES job_postings(job_id),
     saved_at     TIMESTAMP DEFAULT now(),
-    notes        TEXT
+    notes        TEXT,
+    CONSTRAINT uq_saved_jobs_user_job UNIQUE (user_id, job_id)
+
 );
 
 CREATE TABLE interview_notes (
