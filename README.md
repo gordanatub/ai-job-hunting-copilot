@@ -18,8 +18,8 @@ sql
 1. U levom meniju: Compute → Lakebase (ili preko SQL → OLTP database u nekim verzijama UI-ja).
 2. Klikni Create database instance, daj joj ime npr. jobcopilot-db.
 3. Kada se instanca digne, dobijaš connection detalje (host, port, database, user) — sačuvaj ih kao secrets isto kao API ključeve.
-4. Ako scripts/delta_table_job_postings.sql ne radi potrebno uraditi drop tabele i u kodu izmijeniti i izvrsiti samo jednom, pa vratiti na originalni kod sa append!!!
-''' (df_clean.write.mode("append")  ///append -> overwrite
+4. Ako scripts/delta_table_job_postings.sql ne radi potrebno uraditi drop tabele i u kodu izmijeniti i izvrsiti 
+''' (df_clean.write.mode("overwrite") 
     .format("delta")
     .saveAsTable("job_copilot.clean.job_postings")) '''
 
