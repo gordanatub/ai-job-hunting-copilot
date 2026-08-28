@@ -29,7 +29,7 @@ sql
 
 - Implementiran AI agent - > agent.py
 - Model koji se koristi je: Meta Llama 3.3 70B Instruct
-- Napomena: ne zaboraviti izmjeniti podatke za pristup bazi (host, user, port i it) tako da odgovaraju vašem profilu, a ne mom
+- Napomena: ne zaboraviti izmjeniti podatke za pristup bazi (host, user, port i itd) tako da odgovaraju vašem profilu, a ne mom
 - Rezultat izvršavanja testnih poziva koji se nalaze u main-u na dnu agent.py fajla:
 ```text
 ======================================================================
