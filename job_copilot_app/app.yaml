@@ -1,1 +1,10 @@
 command: ["streamlit", "run", "app.py"]
+env:
+  - name: LAKEBASE_ENDPOINT
+    valueFrom: lakebase-db
+resources:
+  - name: lakebase-db
+    database:
+      project: jobcopilot-db-yourname
+      branch: production
+      endpoint: primary

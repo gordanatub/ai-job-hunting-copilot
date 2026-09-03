@@ -1,3 +1,11 @@
+# /// script
+# [tool.databricks.environment]
+# dependencies = [
+#   "databricks-vectorsearch",
+#   "psycopg2-binary"
+# ]
+# ///
+
 import json
 import psycopg2
 
@@ -19,13 +27,10 @@ MAX_TOOL_ROUNDS = 5
 
 # ---------------------------------------------------------
 # LAKEBASE CONNECTION
-# Same configuration as in your data-loading script
+# Uses Apps + Lakebase integration pattern with env vars
 # ---------------------------------------------------------
 
-LB_HOST = "ep-shy-shape-d85lksg4.database.us-east-2.cloud.databricks.com"
-LB_PORT = 5432
-LB_DB = "databricks_postgres"
-LB_USER = "job_copilot_superuser"
+import os
 
 
 # ---------------------------------------------------------
@@ -34,12 +39,30 @@ LB_USER = "job_copilot_superuser"
 
 workspace = WorkspaceClient()
 
-vector_client = VectorSearchClient()
+# Lazy initialization for vector search (to avoid auth errors at import time)
+_vector_client = None
+_index = None
 
-index = vector_client.get_index(
-    endpoint_name=ENDPOINT_NAME,
-    index_name=INDEX_NAME
-)
+def get_vector_index():
+    """Get the vector search index, initializing on first use."""
+    global _vector_client, _index
+    if _index is None:
+        if "DATABRICKS_CLIENT_SECRET" in os.environ:
+            # Databricks App environment — authenticate as the app's service principal
+            _vector_client = VectorSearchClient(
+                workspace_url=f"https://{os.environ['DATABRICKS_HOST']}",
+                service_principal_client_id=os.environ["DATABRICKS_CLIENT_ID"],
+                service_principal_client_secret=os.environ["DATABRICKS_CLIENT_SECRET"],
+                disable_notice=True
+            )
+        else:
+            # Notebook environment — auto-detect credentials
+            _vector_client = VectorSearchClient(disable_notice=True)
+        _index = _vector_client.get_index(
+            endpoint_name=ENDPOINT_NAME,
+            index_name=INDEX_NAME
+        )
+    return _index
 
 
 # ---------------------------------------------------------
@@ -50,22 +73,22 @@ def get_conn():
     """
     Create a connection to Lakebase PostgreSQL.
 
-    Password is retrieved from the existing Databricks secret
-    configuration used by the data-loading notebook.
+    Uses the Apps + Lakebase integration pattern:
+    - Connection params from environment variables (PGHOST, PGDATABASE, PGUSER, PGPORT, PGSSLMODE)
+    - Password from Lakebase credential generation API (workspace.postgres.generate_database_credential)
+    - Endpoint path from LAKEBASE_ENDPOINT env var (set via valueFrom in app.yaml)
     """
-
-    lb_password = dbutils.secrets.get(
-        scope="job-copilot",
-        key="lakebase-password"
-    ).strip("\x00")
+    credential = workspace.postgres.generate_database_credential(
+        endpoint=os.environ["LAKEBASE_ENDPOINT"]
+    )
 
     return psycopg2.connect(
-        host=LB_HOST,
-        port=LB_PORT,
-        dbname=LB_DB,
-        user=LB_USER,
-        password=lb_password,
-        sslmode="require"
+        host=os.environ["PGHOST"],
+        port=int(os.environ.get("PGPORT", 5432)),
+        dbname=os.environ["PGDATABASE"],
+        user=os.environ["PGUSER"],
+        password=credential.token,
+        sslmode=os.environ.get("PGSSLMODE", "require")
     )
 
 
@@ -236,7 +259,7 @@ Do not invent requirements or user qualifications.
     # VECTOR SEARCH
     # --------------------------------------------------------
 
-    results = index.similarity_search(
+    results = get_vector_index().similarity_search(
         query_text=personalized_query,
         columns=[
             "job_id",

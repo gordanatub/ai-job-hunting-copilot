@@ -1,5 +1,5 @@
 import streamlit as st
-from source_code.agent import call_agent  # tvoj kod iz Faze 4, prebačen u modul
+from agent import call_agent
 
 st.set_page_config(page_title="AI Job Hunting Copilot")
 st.title("🎯 AI Job Hunting Copilot")

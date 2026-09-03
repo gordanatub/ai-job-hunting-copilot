@@ -1,4 +1,4 @@
 streamlit
 psycopg2-binary
-databricks-sdk
-agent
+databricks-sdk>=0.118.0
+databricks-vectorsearch
