@@ -1,4 +1,3 @@
-# ai-job-hunting-copilot
 
 # AI Job Hunting Copilot
 
