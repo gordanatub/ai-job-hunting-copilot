@@ -1,29 +1,65 @@
 # ai-job-hunting-copilot
-Zach Wilson "EcZachly" Databricks AI Capstone Specification
 
-## DID DO
-- Skripta za generisanje sheme baze podataka se moze prekopirati u sql editor unutar LakseBase Postgres sekcije (9 tackica gore desno) i generise se sema za vec kreiranu bazu. 
-- U powershellu se moze kreirati secret za izvlacenje lozinke potrebne za konekciju prema bazi (nisam zapisala nigdje kako se to radi ali msm da ima u vodicu na slacku)
-- Kad budete kreirali INDEX na bazu, taj proces ce trajati 20ak minuta pa se celije ispod nece izvrsavati jer je status indexa "not ready" ili kako god, zato je potrebno sacekati da se svi redovi baze indeksiraju da se moze nastaviti
+# AI Job Hunting Copilot
 
-### Otvori Catalog u levom meniju i napravi šemu za projekat (SQL editor ili notebook):
-sql
-- CREATE CATALOG IF NOT EXISTS job_copilot;
-- CREATE SCHEMA IF NOT EXISTS job_copilot.raw;      -- sirovi podaci iz API-ja
-- CREATE SCHEMA IF NOT EXISTS job_copilot.clean;    -- očišćeni/transformisani podaci
-- CREATE SCHEMA IF NOT EXISTS job_copilot.vector;   -- embeddings / vector search izvor tabele
-- CREATE VOLUME IF NOT EXISTS job_copilot.raw.landing; -- za sirove JSON fajlove
+Kapstoun projekat na Databricks platformi: AI agent koji pretražuje poslove, čuva ih u korisnikov pipeline, prati aplikacije i piše tailored cover-letter snippet-e — nad podacima koji teku od RemoteOK API-ja, kroz Spark, do Lakebase (Postgres).
+
+## Šta je urađeno
+
+**Arhitektura:**
+- **Lakebase** (Postgres) — relacione tabele za korisnike, profile, poslove i pipeline
+- **Spark pipeline** — povlači poslove sa RemoteOK API-ja → Delta (staging/raw sloj) → Lakebase (serving sloj)
+- **Embeddings + Vector Search** — opisi poslova i resume tekst pretvoreni u vektore radi semantičke pretrage
+- **Agent alati (Python funkcije)** — `search_jobs`, `explain_match`, `save_job`, `draft_cover_letter`, `get_pipeline`
+- **Databricks App** (Streamlit) — chat interfejs + tabela pipeline-a
+
+## Kako je urađeno (redoslijed)
+
+1. Definisan obim projekta (RemoteOK kao izvor, puni set od 8 Lakebase tabela)
+2. Napisan SQL schema sa foreign key relacijama
+3. PySpark job: RemoteOK → Delta (raw/staging) → čišćenje/dedup → Lakebase (`job_postings`)
+4. Embedding poziv na opise poslova + resume tekst, upis vektora u kolone
+5. Vector Search endpoint + index nad `job_postings`
+6. Python funkcije za svaki agent alat, testirane pojedinačno
+7. Alati registrovani na agenta (tool-calling)
+8. UI app povezan na agenta i Lakebase
+9. End-to-end testiranje realnih scenarija
+
+---
+
+## Upute za korištenje
+
+### Za pokretanje/development
+
+1. Registruj se na Databricks Free Edition
+2. Kreiraj Lakebase instancu, pokreni schema SQL za svih 8 tabela
+3. Pokreni Spark notebook (RemoteOK → Delta → Lakebase) da napuniš `job_postings`
+4. Podesi Databricks Workflow da automatizuje ingestion
+5. Kreiraj Vector Search endpoint i index nad `job_postings`
+6. Deploy-uj Streamlit app preko Apps → Create App
+
+### Za krajnjeg korisnika (kroz app)
+
+- Napiši šta tražiš: *"nađi mi remote backend pozicije bez 5+ godina Kubernetes iskustva"*
+- Reci *"sačuvaj drugu"* da dodaš posao u pipeline
+- Reci *"napiši cover letter za nju"* da dobiješ draft
+- Pitaj *"šta mi je zastarjelo u pipeline-u"* da vidiš stare aplikacije
+- Pipeline tabela ispod chata prikazuje sve sačuvane poslove po stage-u (saved/applied/interviewing/rejected/offer)
+
+---
+
+## Third-party API
+
+- [RemoteOK API](https://remoteok.com/api) — remote job listings u JSON formatu, besplatno, bez API ključa
 
 ### Kreiranje Lakebase instance ~ sql skripta scripts/database-schema.sql
-1. U levom meniju: Compute → Lakebase (ili preko SQL → OLTP database u nekim verzijama UI-ja).
+1. U lijevom meniju: Compute → Lakebase (ili preko SQL → OLTP database u nekim verzijama UI-ja).
 2. Klikni Create database instance, daj joj ime npr. jobcopilot-db.
 3. Kada se instanca digne, dobijaš connection detalje (host, port, database, user) — sačuvaj ih kao secrets isto kao API ključeve.
 4. Ako scripts/delta_table_job_postings.sql ne radi potrebno uraditi drop tabele i u kodu izmijeniti i izvrsiti 
 ''' (df_clean.write.mode("overwrite") 
     .format("delta")
     .saveAsTable("job_copilot.clean.job_postings")) '''
-
-### Sinhronizacija Delta → Lakebase
 
 ### AI agent sa alatima (tools)
 
