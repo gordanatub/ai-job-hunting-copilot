@@ -3,6 +3,10 @@
 
 Kapstoun projekat na Databricks platformi: AI agent koji pretražuje poslove, čuva ih u korisnikov pipeline, prati aplikacije i piše tailored cover-letter snippet-e — nad podacima koji teku od RemoteOK API-ja, kroz Spark, do Lakebase (Postgres).
 
+<img width="1600" height="795" alt="57651" src="https://github.com/user-attachments/assets/d3ec9127-77d3-4c8a-bb6a-493615ac01d2" />
+
+<img width="1600" height="748" alt="57652" src="https://github.com/user-attachments/assets/14282a29-4822-4ffe-ad03-1d7bff39492d" />
+
 ## Šta je urađeno
 
 **Arhitektura:**
